@@ -1,0 +1,160 @@
+import java.util.ArrayList;
+import java.util.Random;
+
+class ProblemOfThePhilosophers {
+
+	final static int MAX_STICKS = 10;
+	final static int MAX_PHILOSOPHER = 10;
+
+	public static void main(String args[]) {
+
+		ArrayList<Stick> stickList = new ArrayList<Stick>();
+		ArrayList<Philosopher> philosopherList = new ArrayList<Philosopher>();
+
+		for (int i = 0; i < MAX_STICKS; i++) {
+			stickList.add(new Stick(i));
+		}
+
+		for (int i = 0; i < MAX_PHILOSOPHER; i++) {
+			philosopherList.add(new Philosopher(i, stickList.get(i), stickList
+					.get(stickList.size() - i - 1)));
+			philosopherList.get(i).start();
+		}
+
+	}
+
+}
+
+class Philosopher extends Thread {
+
+	int id;
+	Stick left;
+	Stick right;
+	boolean leftTaken;
+	boolean rightTaken;
+	boolean flag;
+
+	Philosopher(int identificativo_, Stick izquierda_, Stick derecha_) {
+		this.id = identificativo_;
+		this.left = izquierda_;
+		this.right = derecha_;
+	}
+
+	@Override
+	public void run() {
+		while (true) {
+			this.think();
+
+			this.flag = false;
+
+			int n = new Random().nextInt(2);
+
+			if (n == 0) {
+				if (!this.left.isOccupied()) {
+					this.left.take();
+					this.leftTaken = true;
+				} else if (!this.right.isOccupied()) {
+					this.right.take();
+					this.rightTaken = true;
+				}
+			} else if (n == 1) {
+				if (!this.right.isOccupied()) {
+					this.right.take();
+					this.rightTaken = true;
+				} else if (!this.left.isOccupied()) {
+					this.left.take();
+					this.leftTaken = true;
+				}
+			}
+
+			if (this.leftTaken) {
+				if (!this.right.isOccupied()) {
+					this.right.take();
+					this.rightTaken = true;
+					this.flag = true;
+				} else {
+					this.left.setFree();
+					this.leftTaken = false;
+				}
+			}
+
+			if (this.rightTaken && !this.flag) {
+				if (!this.left.isOccupied()) {
+					this.left.take();
+					this.leftTaken = true;
+				} else {
+					this.right.setFree();
+					this.rightTaken = false;
+				}
+			}
+
+			if (this.rightTaken && this.leftTaken) {
+				this.eat();
+
+				n = new Random().nextInt(2);
+
+				if (n == 0) {
+					this.left.setFree();
+					this.leftTaken = false;
+					this.right.setFree();
+					this.rightTaken = false;
+				} else {
+					this.right.setFree();
+					this.rightTaken = false;
+					this.left.setFree();
+					this.leftTaken = false;
+				}
+			}
+
+		}
+	}
+
+	public void think() {
+		try {
+			System.out.println("Starting to think: " + this.id);
+			sleep(new Random().nextInt(5000));
+			System.out.println("Eding to think: " + this.id);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void eat() {
+		try {
+			System.out.println("Starting to eat: " + this.id);
+			sleep(new Random().nextInt(5000));
+			System.out.println("Ending to eat: " + this.id);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+}
+
+class Stick {
+
+	int id;
+	boolean occupied = false;
+
+	Stick(int identificativo_) {
+		id = identificativo_;
+	}
+
+	synchronized void leave() {
+		occupied = false;
+		notify();
+	}
+
+	synchronized boolean isOccupied() {
+		return occupied ? true : false;
+	}
+
+	synchronized void take() {
+		occupied = true;
+	}
+
+	void setFree() {
+		occupied = false;
+	}
+
+}
